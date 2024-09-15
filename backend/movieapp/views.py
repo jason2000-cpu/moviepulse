@@ -77,13 +77,22 @@ class LoginView(APIView):
                 {"error": "Email and password are required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
+        if not User.objects.filter(email=email).exists():
+            return Response(
+                {"error": "User with this email does not exist"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        if not User.objects.get(email=email).check_password(password):
+            return Response(
+                {"error": "Invalid password"}, status=status.HTTP_401_UNAUTHORIZED
+            )
         user = authenticate(request, email=email, password=password)
         if user is None:
             return Response(
                 {"error": "Invalid email or password"},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
+
         # if not user.otp_verified:
         #     return "Remember to verify your account"
 
