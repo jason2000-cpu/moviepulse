@@ -24,6 +24,12 @@ Install packages:
 pip install -r requirements.txt
 ```
 
+Copy the .env.example file to .env and update the values:
+
+```
+cp .env.example .env
+```
+
 Run migrations to create the DB:
 
 ```
