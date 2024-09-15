@@ -1,7 +1,11 @@
 import environ
 import os
 from pathlib import Path
+from os import getenv
+from dotenv import load_dotenv
 
+
+load_dotenv()
 env = environ.Env(
     # set casting, default value
     DEBUG=(bool, False)
@@ -97,13 +101,28 @@ AUTH_USER_MODEL = "movieapp.User"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+if DEBUG:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
+
+# Replace the DATABASES section of your settings.py with this
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": getenv("PGDATABASE"),
+        "USER": getenv("PGUSER"),
+        "PASSWORD": getenv("PGPASSWORD"),
+        "HOST": getenv("PGHOST"),
+        "PORT": getenv("PGPORT", 5432),
+        "OPTIONS": {
+            "sslmode": "require",
+        },
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
