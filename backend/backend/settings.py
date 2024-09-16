@@ -42,7 +42,10 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "rest_framework_simplejwt",
-    "debug_toolbar",
+    "debug_toolbar",  # for debugging if DEBUG=True
+    "django_extensions",
+    "drf_spectacular",  # documenting API
+    # "drf_spectacular_sidecar",
 ]
 
 MIDDLEWARE = [
@@ -95,7 +98,8 @@ WSGI_APPLICATION = "backend.wsgi.application"
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-    )
+    ),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 AUTH_USER_MODEL = "movieapp.User"

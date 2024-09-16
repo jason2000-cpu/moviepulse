@@ -85,3 +85,12 @@ npm run start
 [] Reset password
 
 [] Store favorite movies to the DB for each user
+
+## Endpoints
+
+![/api/login/	movieapp.views.LoginView	login
+/api/movies/	movieapp.views.TopMoviesListView	fetch-top-movies
+/api/otp/verify/	movieapp.views.VerifyOTPView	verify-OTP
+/api/register/	movieapp.views.UserCreateView	create_user
+/api/search-movies/	movieapp.views.SearchMoviesView	search-movies
+/api/test/	movieapp.views.hello_world	api-test](endpoints.png)
