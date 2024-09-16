@@ -18,12 +18,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
 # False if not in os.environ because of casting above
-DEBUG = env("DEBUG")
+DEBUG = os.environ.get("DEBUG", False)
+
+# print(DEBUG)
 
 # Raises Django's ImproperlyConfigured
 # exception if SECRET_KEY not in os.environ
-SECRET_KEY = env("SECRET_KEY")
-
+SECRET_KEY = os.environ["SECRET_KEY"] 
+# print(SECRET_KEY)
 ALLOWED_HOSTS = [
     "127.0.0.1", 
     "moviepulse.onrender.com",  
