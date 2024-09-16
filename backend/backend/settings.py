@@ -86,8 +86,12 @@ TEMPLATES = [
 ]
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "unique-snowflake",
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": os.getenv("REDDIS_SERVER"),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "SSL_CERT_REQS": os.getenv("REDDIS_CERT"),
+        },
     }
 }
 
@@ -197,8 +201,11 @@ EMAIL_TIMEOUT = env.int("EMAIL_TIMEOUT", default=10)
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL")
 
 
-CELERY_BROKER_URL = "redis://localhost:6379/0"
-CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+CELERY_BROKER_URL = os.getenv("REDDIS_SERVER")
+CELERY_RESULT_BACKEND = os.getenv("REDDIS_SERVER")
+
+CELERY_REDIS_SSL_CERT_REQS = (os.getenv("REDDIS_CERT"),)
+
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
