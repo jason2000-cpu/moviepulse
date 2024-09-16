@@ -1,5 +1,3 @@
-// src/components/HomeScreen.js
-
 import React from 'react';
 
 const HomeScreen = () => {
@@ -11,7 +9,7 @@ const HomeScreen = () => {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pt-4">
       {/* Featured Content */}
       <div className="relative h-96 bg-purple-900 rounded-lg overflow-hidden">
         <img src="/placeholder-featured-image.jpg" alt="Insider" className="w-full h-full object-cover opacity-50" />
@@ -29,11 +27,11 @@ const HomeScreen = () => {
         <h3 className="text-2xl font-bold mb-4">Trending</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {trendingMovies.map((movie) => (
-            <div key={movie.id} className="bg-white rounded-lg shadow overflow-hidden">
+            <div key={movie.id} className="bg-gray-800 rounded-lg shadow overflow-hidden">
               <img src={movie.image} alt={movie.title} className="w-full h-48 object-cover" />
               <div className="p-4">
-                <h4 className="font-bold text-lg mb-1">{movie.title}</h4>
-                <p className="text-sm text-gray-600">{movie.year} | {movie.genre}</p>
+                <h4 className="font-bold text-lg mb-1 text-white">{movie.title}</h4>
+                <p className="text-sm text-gray-400">{movie.year} | {movie.genre}</p>
               </div>
             </div>
           ))}
