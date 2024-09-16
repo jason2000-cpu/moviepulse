@@ -132,7 +132,27 @@ class LoginView(APIView):
 
 
 class SearchMoviesView(APIView):
+    MAX_REQUESTS = 2
+    TIME_WINDOW = 60 * 60
+
     def get(self, request):
+        ip_address = self.get_client_ip(request)
+        cache_key = f"search_requests_{ip_address}"
+        cached_movies_key = f"cached_movies_{ip_address}"
+
+        request_count = cache.get(cache_key, 0)
+
+        cached_movies = cache.get(cached_movies_key, None)
+
+        if request_count >= self.MAX_REQUESTS:
+            return Response(
+                {
+                    "error": "Rate limit exceeded. Create an account to proceed, currently showing previous searches",
+                    "cached_movies": cached_movies if cached_movies else [],
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
         query = request.GET.get("query")
         if not query:
             return Response(
@@ -148,7 +168,19 @@ class SearchMoviesView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
+        cache.set(cache_key, request_count + 1, timeout=self.TIME_WINDOW)
+
+        cache.set(cached_movies_key, movie_data, timeout=self.TIME_WINDOW)
+
         return Response(movie_data, status=status.HTTP_200_OK)
+
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(",")[0]
+        else:
+            ip = request.META.get("REMOTE_ADDR")
+        return ip
 
 
 class TopMoviesListView(APIView):
