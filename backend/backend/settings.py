@@ -95,7 +95,7 @@ CACHES = {
     }
 }
 
-
+FRONTEND_URL = "http://localhost:3000"
 WSGI_APPLICATION = "backend.wsgi.application"
 
 #### AUTH ####

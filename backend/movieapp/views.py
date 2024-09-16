@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .serializers import UserSerializer
+from .serializers import UserSerializer, LoginSerializer, VerifyOTPSerializer
 from rest_framework.generics import GenericAPIView
 from rest_framework import status
 from .utils import send_otp_email, fetch_movie_data, MoviePagination, fetch_top_movies
@@ -12,6 +12,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
+from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode
 
 
 @api_view(["GET"])
@@ -49,53 +51,51 @@ class VerifyOTPView(APIView):
     This view handles the OTP verification process.
     """
 
-    def post(self, request):
-        email = request.data.get("email")
-        otp = request.data.get("otp")
+    def get(self, request):
+        uid = request.query_params.get("uid")
+        otp_encoded = request.query_params.get("otp")
 
-        if not email or not otp:
+        if not uid or not otp_encoded:
             return Response(
-                {"error": "Email and OTP are required"},
+                {"error": "Missing parameters"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            return Response(
-                {"error": "User with this email does not exist"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            user_id = force_str(urlsafe_base64_decode(uid))
+            otp = force_str(urlsafe_base64_decode(otp_encoded))
 
-        try:
+            user = User.objects.get(pk=user_id)
             otp_obj = OneTimePassword.objects.get(user=user, otp=otp)
-        except OneTimePassword.DoesNotExist:
+
+            otp_obj.delete()
+            user.otp_verified = True
+            user.save()
+
             return Response(
-                {"error": "Invalid OTP"},
+                {"message": "OTP verified successfully"},
+                status=status.HTTP_200_OK,
+            )
+        except (User.DoesNotExist, OneTimePassword.DoesNotExist, ValueError):
+            return Response(
+                {"error": "Invalid OTP or user"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        otp_obj.delete()
-
-        user.otp_verified = True
-        user.save()
-
-        return Response(
-            {"message": "OTP verified successfully"},
-            status=status.HTTP_200_OK,
-        )
 
 
 class LoginView(APIView):
-    def post(self, request):
-        email = request.data.get("email")
-        password = request.data.get("password")
 
-        if not email or not password:
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        if not serializer.is_valid():
             return Response(
-                {"error": "Email and password are required"},
+                {"error": serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        email = serializer.validated_data.get("email")
+        password = serializer.validated_data.get("password")
+
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:

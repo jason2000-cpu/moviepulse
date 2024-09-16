@@ -5,6 +5,9 @@ from .models import OneTimePassword, User
 import random
 import requests
 from rest_framework.pagination import PageNumberPagination
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.urls import reverse
 
 if settings.DEBUG:
     import logging
@@ -24,16 +27,25 @@ def send_otp_email_task(user):
     subject = "OTP for MovieApp"
 
     email_from = settings.DEFAULT_FROM_EMAIL
+
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    otp_encoded = urlsafe_base64_encode(force_bytes(otp))
+
+    verification_link = reverse("verify-OTP")
+    full_link = (
+        f"{settings.FRONTEND_URL}{verification_link}?uid={uid}&otp={otp_encoded}"
+    )
+
     email_body = f"""
     Hello {user.first_name},
 
-    Your OTP is {otp}. Please do not share this OTP with anyone.
+    Your OTP is {otp}. Please click the link below to verify:
+
+    {full_link}
 
     Regards,
     Team MovieApp
     """
-    # logger.info(email_body)
-    # print(email_body)
     OneTimePassword.objects.create(user=user, otp=otp)
 
     try:

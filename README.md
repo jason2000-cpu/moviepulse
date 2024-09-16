@@ -95,4 +95,4 @@ npm run start
 /api/search-movies/	movieapp.views.SearchMoviesView	search-movies
 /api/test/	movieapp.views.hello_world	api-test](endpoints.png)
 
-Navigate to `http://127.0.0.1:8000/api/schema/swagger-ui/` or `https://moviepulse.onrender.com/api/schema/swagger-ui/`
+Navigate to `http://127.0.0.1:8000/api/schema/swagger-ui/` or [https://moviepulse.onrender.com/api/schema/swagger-ui/](https://moviepulse.onrender.com/api/schema/swagger-ui/)
