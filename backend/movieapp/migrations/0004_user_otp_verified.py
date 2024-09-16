@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('movieapp', '0003_onetimepassword_verified'),
+        ("movieapp", "0003_onetimepassword_verified"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='otp_verified',
+            model_name="user",
+            name="otp_verified",
             field=models.BooleanField(default=False),
         ),
     ]

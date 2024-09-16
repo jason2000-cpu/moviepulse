@@ -1,7 +1,6 @@
 import environ
 import os
 from pathlib import Path
-from os import getenv
 from dotenv import load_dotenv
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
@@ -25,10 +24,27 @@ DEBUG = env("DEBUG")
 # exception if SECRET_KEY not in os.environ
 SECRET_KEY = env("SECRET_KEY")
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [
+    "127.0.0.1", 
+    "moviepulse.onrender.com",  
+    "especially-strong-piglet.ngrok-free.app"
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://moviepulse.onrender.com",
+    "https://especially-strong-piglet.ngrok-free.app"
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "https://moviepulse.onrender.com",
+    "https://especially-strong-piglet.ngrok-free.app"
+]
+
+
+
 TMDB_API_KEY = env("TMDB_API_KEY")
 TMDB_ACCESS_TOKEN = env("TMDB_ACCESS_TOKEN")
-# Application definition
+
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -45,21 +61,22 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "debug_toolbar",  # for debugging if DEBUG=True
     "django_extensions",
-    "drf_spectacular",  # documenting API
+    # "drf_spectacular",  # documenting API
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS: True
@@ -110,27 +127,27 @@ AUTH_USER_MODEL = "movieapp.User"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-if DEBUG:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
+# if DEBUG:
+#     DATABASES = {
+#         "default": {
+#             "ENGINE": "django.db.backends.sqlite3",
+#             "NAME": BASE_DIR / "db.sqlite3",
+#         }
+#     }
+# else:
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("PGDATABASE"),
+        "USER": os.getenv("PGUSER"),
+        "PASSWORD": os.getenv("PGPASSWORD"),
+        "HOST": os.getenv("PGHOST"),
+        "PORT": os.getenv("PGPORT", 5432),
+        "OPTIONS": {
+            "sslmode": "require",
+        },
     }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("PGDATABASE"),
-            "USER": os.getenv("PGUSER"),
-            "PASSWORD": os.getenv("PGPASSWORD"),
-            "HOST": os.getenv("PGHOST"),
-            "PORT": os.getenv("PGPORT", 5432),
-            "OPTIONS": {
-                "sslmode": "require",
-            },
-        }
-    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -161,14 +178,13 @@ TIME_ZONE = "Africa/Nairobi"
 USE_I18N = True
 
 USE_TZ = True
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
-
-STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+STATIC_HOST = os.environ.get("DJANGO_STATIC_HOST", "")
+
+STATIC_URL = STATIC_HOST + "/static/"
+
+
 STORAGES = {
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",

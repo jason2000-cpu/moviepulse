@@ -78,7 +78,7 @@ class MoviePagination(PageNumberPagination):
 
 
 def fetch_movie_data(query):
-    url = f"https://api.themoviedb.org/3/search/movie"
+    url = "https://api.themoviedb.org/3/search/movie"
     params = {
         "api_key": settings.TMDB_API_KEY,
         "query": query,

@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .serializers import UserSerializer, LoginSerializer, MovieSearchSerializer
@@ -8,13 +7,13 @@ from .utils import send_otp_email, fetch_movie_data, MoviePagination, fetch_top_
 from .models import User, OneTimePassword
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from django.db import transaction
+
 
 @api_view(["GET"])
 def hello_world(request):
@@ -26,23 +25,22 @@ class UserCreateView(GenericAPIView):
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
-        
+
         if serializer.is_valid():
             try:
                 """
                 Incase of any error in registration process, don't create the user in the DB
-                """ 
+                """
                 with transaction.atomic():
-                    user = User.objects.create_new_user(
+                    user = User.objects.create_user(
                         email=serializer.validated_data["email"],
                         first_name=serializer.validated_data["first_name"],
                         last_name=serializer.validated_data["last_name"],
-                        password=serializer.validated_data["password"]
+                        password=serializer.validated_data["password"],
                     )
 
-                    
                     if not send_otp_email(email=user.email):
-                        user.delete()  
+                        user.delete()
                         raise ValidationError("Failed to send OTP email")
 
                 return Response(
@@ -76,7 +74,6 @@ class VerifyOTPView(GenericAPIView):
             )
 
         try:
-
             user_id = force_str(urlsafe_base64_decode(uid))
             otp = force_str(urlsafe_base64_decode(otp_encoded))
 

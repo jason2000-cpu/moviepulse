@@ -11,7 +11,7 @@ class UserManager(BaseUserManager):
         except ValidationError:
             raise ValueError(_("Enter a valid email e.g johndoe@gmail.com "))
 
-    def create_new_user(self, email, first_name, last_name, password, **extra_fields):
+    def create_user(self, email, first_name, last_name, password, **extra_fields):
         if email:
             email = self.normalize_email(email)
             self.email_validator(email)
@@ -35,7 +35,7 @@ class UserManager(BaseUserManager):
         if extra_fields.get("is_staff") is not True:
             pass
 
-        user = self.create_new_user(
+        user = self.create_user(
             email, first_name, last_name, password, **extra_fields
         )
         user.save(using=self._db)
