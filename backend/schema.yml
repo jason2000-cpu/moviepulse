@@ -8,12 +8,28 @@ paths:
       operationId: login_create
       tags:
       - login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Login'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Login'
+        required: true
       security:
       - jwtAuth: []
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Login'
+          description: ''
   /api/movies/:
     get:
       operationId: movies_retrieve
@@ -26,8 +42,8 @@ paths:
         '200':
           description: No response body
   /api/otp/verify/:
-    post:
-      operationId: otp_verify_create
+    get:
+      operationId: otp_verify_retrieve
       description: This view handles the OTP verification process.
       tags:
       - otp
@@ -210,8 +226,8 @@ paths:
                 additionalProperties: {}
           description: ''
   /api/search-movies/:
-    get:
-      operationId: search_movies_retrieve
+    post:
+      operationId: search_movies_create
       tags:
       - search-movies
       security:
@@ -233,6 +249,18 @@ paths:
           description: No response body
 components:
   schemas:
+    Login:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - password
     User:
       type: object
       properties:

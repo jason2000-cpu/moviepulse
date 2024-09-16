@@ -33,11 +33,12 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 
-class LoginSerializer(serializers.Serializer):
+class LoginSerializer(serializers.ModelSerializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
     class Meta:
+        model = User
         fields = ("email", "password")
 
 
@@ -47,3 +48,7 @@ class VerifyOTPSerializer(serializers.Serializer):
 
     class Meta:
         fields = ("email", "otp")
+
+
+class MovieSearchSerializer(serializers.Serializer):
+    query = serializers.CharField(required=True, max_length=10)

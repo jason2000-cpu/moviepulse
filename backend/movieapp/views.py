@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .serializers import UserSerializer, LoginSerializer, VerifyOTPSerializer
+from .serializers import UserSerializer, LoginSerializer, MovieSearchSerializer
 from rest_framework.generics import GenericAPIView
 from rest_framework import status
 from .utils import send_otp_email, fetch_movie_data, MoviePagination, fetch_top_movies
@@ -28,7 +28,7 @@ class UserCreateView(GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             try:
-                user = serializer.save()
+                user = User.objects.create_user(**serializer.validated_data)
                 if not send_otp_email(email=user.email):
                     raise ValidationError("Failed to send OTP email")
                 return Response(
@@ -41,12 +41,12 @@ class UserCreateView(GenericAPIView):
             except ValidationError as e:
                 return Response(
                     {"message": str(e)},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class VerifyOTPView(APIView):
+class VerifyOTPView(GenericAPIView):
     """
     This view handles the OTP verification process.
     """
@@ -57,11 +57,12 @@ class VerifyOTPView(APIView):
 
         if not uid or not otp_encoded:
             return Response(
-                {"error": "Missing parameters"},
+                {"error": "Missing 'uid' or 'otp' parameters"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
+
             user_id = force_str(urlsafe_base64_decode(uid))
             otp = force_str(urlsafe_base64_decode(otp_encoded))
 
@@ -76,17 +77,18 @@ class VerifyOTPView(APIView):
                 {"message": "OTP verified successfully"},
                 status=status.HTTP_200_OK,
             )
-        except (User.DoesNotExist, OneTimePassword.DoesNotExist, ValueError):
+        except (User.DoesNotExist, OneTimePassword.DoesNotExist, ValueError) as e:
             return Response(
-                {"error": "Invalid OTP or user"},
+                {"error": f"Invalid UID, OTP, or OTP has already been used {e}"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
 
-class LoginView(APIView):
+class LoginView(GenericAPIView):
+    serializer_class = LoginSerializer
 
     def post(self, request):
-        serializer = LoginSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             return Response(
                 {"error": serializer.errors},
@@ -95,20 +97,6 @@ class LoginView(APIView):
 
         email = serializer.validated_data.get("email")
         password = serializer.validated_data.get("password")
-
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            return Response(
-                {"error": "User with this email does not exist"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        if not user.check_password(password):
-            return Response(
-                {"error": "Invalid password"},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
 
         user = authenticate(request, email=email, password=password)
         if user is None:
@@ -140,17 +128,23 @@ class LoginView(APIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 
-class SearchMoviesView(APIView):
+class SearchMoviesView(GenericAPIView):
+    serializer_class = MovieSearchSerializer
     MAX_REQUESTS = 2
     TIME_WINDOW = 60 * 60
 
-    def get(self, request):
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        query = serializer.validated_data["query"]
+
         ip_address = self.get_client_ip(request)
         cache_key = f"search_requests_{ip_address}"
         cached_movies_key = f"cached_movies_{ip_address}"
 
         request_count = cache.get(cache_key, 0)
-
         cached_movies = cache.get(cached_movies_key, None)
 
         if request_count >= self.MAX_REQUESTS:
@@ -162,13 +156,6 @@ class SearchMoviesView(APIView):
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
 
-        query = request.GET.get("query")
-        if not query:
-            return Response(
-                {"error": "Query parameter is required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         movie_data = fetch_movie_data(query)
 
         if "error" in movie_data:
@@ -178,7 +165,6 @@ class SearchMoviesView(APIView):
             )
 
         cache.set(cache_key, request_count + 1, timeout=self.TIME_WINDOW)
-
         cache.set(cached_movies_key, movie_data, timeout=self.TIME_WINDOW)
 
         return Response(movie_data, status=status.HTTP_200_OK)
