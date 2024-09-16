@@ -10,7 +10,7 @@ from drf_spectacular.views import (
 
 
 def redirect_to_test(request):
-    return HttpResponseRedirect("/api/test/")
+    return HttpResponseRedirect("api/schema/swagger-ui/")
 
 
 urlpatterns = [
