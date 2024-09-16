@@ -14,7 +14,7 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
-
+from django.db import transaction
 
 @api_view(["GET"])
 def hello_world(request):
@@ -26,11 +26,25 @@ class UserCreateView(GenericAPIView):
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
+        
         if serializer.is_valid():
             try:
-                user = User.objects.create_user(**serializer.validated_data)
-                if not send_otp_email(email=user.email):
-                    raise ValidationError("Failed to send OTP email")
+                """
+                Incase of any error in registration process, don't create the user in the DB
+                """ 
+                with transaction.atomic():
+                    user = User.objects.create_new_user(
+                        email=serializer.validated_data["email"],
+                        first_name=serializer.validated_data["first_name"],
+                        last_name=serializer.validated_data["last_name"],
+                        password=serializer.validated_data["password"]
+                    )
+
+                    
+                    if not send_otp_email(email=user.email):
+                        user.delete()  
+                        raise ValidationError("Failed to send OTP email")
+
                 return Response(
                     {
                         "data": serializer.data,

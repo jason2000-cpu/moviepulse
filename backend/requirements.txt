@@ -18,9 +18,7 @@ django-redis==5.4.0
 djangorestframework==3.15.2
 djangorestframework-simplejwt==5.3.1
 drf-spectacular==0.27.2
-foreman==0.9.7
 gunicorn==23.0.0
-honcho==1.1.0
 idna==3.9
 inflection==0.5.1
 jsonschema==4.23.0
