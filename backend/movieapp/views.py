@@ -11,6 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 
 
 @api_view(["GET"])
@@ -22,16 +23,24 @@ class UserCreateView(GenericAPIView):
     serializer_class = UserSerializer
 
     def post(self, request):
-        user_data = request.data
-        serializer = self.get_serializer(data=user_data)
+        serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            user = serializer.data
-            send_otp_email(email=user["email"])
-            return Response(
-                {"data": user, "message": f"User created successfully"},
-                status=status.HTTP_201_CREATED,
-            )
+            try:
+                user = serializer.save()
+                if not send_otp_email(email=user.email):
+                    raise ValidationError("Failed to send OTP email")
+                return Response(
+                    {
+                        "data": serializer.data,
+                        "message": "User created successfully and OTP sent",
+                    },
+                    status=status.HTTP_201_CREATED,
+                )
+            except ValidationError as e:
+                return Response(
+                    {"message": str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

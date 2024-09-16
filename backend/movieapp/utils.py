@@ -13,11 +13,11 @@ if settings.DEBUG:
 
 
 @shared_task
-def send_otp_email_task(user_id):
+def send_otp_email_task(user):
     try:
-        user = User.objects.get(id=user_id)
+        user = User.objects.get(email=user)
     except User.DoesNotExist:
-        logger.error(f"User with ID {user_id} does not exist.")
+        logger.error(f"User with ID {user} does not exist.")
         return False
 
     otp = random.randint(100000, 999999)
@@ -32,16 +32,17 @@ def send_otp_email_task(user_id):
     Regards,
     Team MovieApp
     """
-
-    # Store OTP in the database
+    # logger.info(email_body)
+    # print(email_body)
     OneTimePassword.objects.create(user=user, otp=otp)
 
-    # Send email
     try:
         send_mail(subject, email_body, email_from, [user.email], fail_silently=False)
         logger.info(f"OTP email sent to {user.email}")
     except Exception as e:
-        logger.error(f"Error sending OTP email to {user.email}: {e}")
+        logger.error(
+            f"Error sending OTP email to {user.email}: {str(e)}", exc_info=True
+        )
         return False
 
     return True
@@ -49,8 +50,8 @@ def send_otp_email_task(user_id):
 
 def send_otp_email(email):
     try:
-        user = User.objects.get(email=email)  # Get the user by email
-        send_otp_email_task.delay(user.id)  # Pass user.id, not email
+        user = User.objects.get(email=email)
+        send_otp_email_task(user)
         logger.info(f"OTP email task for {email} has been queued.")
         return True
     except User.DoesNotExist:
