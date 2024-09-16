@@ -61,7 +61,8 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "debug_toolbar",  # for debugging if DEBUG=True
     "django_extensions",
-    # "drf_spectacular",  # documenting API
+    "drf_spectacular",  # documenting API
+    'drf_spectacular_sidecar', 
 ]
 
 MIDDLEWARE = [

@@ -230,12 +230,28 @@ paths:
       operationId: search_movies_create
       tags:
       - search-movies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovieSearch'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MovieSearch'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MovieSearch'
+        required: true
       security:
       - jwtAuth: []
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieSearch'
+          description: ''
   /api/test/:
     get:
       operationId: test_retrieve
@@ -261,6 +277,14 @@ components:
       required:
       - email
       - password
+    MovieSearch:
+      type: object
+      properties:
+        query:
+          type: string
+          maxLength: 10
+      required:
+      - query
     User:
       type: object
       properties:
