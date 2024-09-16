@@ -94,3 +94,5 @@ npm run start
 /api/register/	movieapp.views.UserCreateView	create_user
 /api/search-movies/	movieapp.views.SearchMoviesView	search-movies
 /api/test/	movieapp.views.hello_world	api-test](endpoints.png)
+
+Navigate to `http://127.0.0.1:8000/api/schema/swagger-ui/` or 
