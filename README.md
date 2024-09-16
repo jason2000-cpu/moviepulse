@@ -69,3 +69,19 @@ npm i
 ```
 npm run start
 ```
+
+## Features
+
+[x] User registration, login
+
+[x] Send and verify OTP to email
+
+[x] Cache movies' list
+
+[x] Allow only 3 searches for guest users (those without account)
+
+[] Change profile details
+
+[] Reset password
+
+[] Store favorite movies to the DB for each user

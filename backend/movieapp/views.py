@@ -27,7 +27,7 @@ class UserCreateView(GenericAPIView):
         if serializer.is_valid():
             serializer.save()
             user = serializer.data
-            send_otp_email(user["email"])
+            send_otp_email(email=user["email"])
             return Response(
                 {"data": user, "message": f"User created successfully"},
                 status=status.HTTP_201_CREATED,
@@ -35,36 +35,46 @@ class UserCreateView(GenericAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# class VerifyOTPView(GenericAPIView):
-#     def post(self, request):
-#         email = request.data.get("email")
-#         otp = request.data.get("otp")
+class VerifyOTPView(APIView):
+    """
+    This view handles the OTP verification process.
+    """
 
-#         if not email or not otp:
-#             return Response(
-#                 {"error": "Email and OTP are required"},
-#                 status=status.HTTP_400_BAD_REQUEST,
-#             )
+    def post(self, request):
+        email = request.data.get("email")
+        otp = request.data.get("otp")
 
-#         try:
-#             user = User.objects.get(email=email)
-#         except User.DoesNotExist:
-#             return Response(
-#                 {"error": "User with this email does not exist"},
-#                 status=status.HTTP_404_NOT_FOUND,
-#             )
+        if not email or not otp:
+            return Response(
+                {"error": "Email and OTP are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-#         try:
-#             otp_obj = OneTimePassword.objects.get(user=user, otp=otp)
-#         except OneTimePassword.DoesNotExist:
-#             return Response(
-#                 {"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST
-#             )
-#         otp_obj.delete()
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User with this email does not exist"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
-#         return Response(
-#             {"message": "OTP verified successfully"}, status=status.HTTP_200_OK
-#         )
+        try:
+            otp_obj = OneTimePassword.objects.get(user=user, otp=otp)
+        except OneTimePassword.DoesNotExist:
+            return Response(
+                {"error": "Invalid OTP"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        otp_obj.delete()
+
+        user.otp_verified = True
+        user.save()
+
+        return Response(
+            {"message": "OTP verified successfully"},
+            status=status.HTTP_200_OK,
+        )
 
 
 class LoginView(APIView):
@@ -77,15 +87,20 @@ class LoginView(APIView):
                 {"error": "Email and password are required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if not User.objects.filter(email=email).exists():
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
             return Response(
                 {"error": "User with this email does not exist"},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        if not User.objects.get(email=email).check_password(password):
+
+        if not user.check_password(password):
             return Response(
-                {"error": "Invalid password"}, status=status.HTTP_401_UNAUTHORIZED
+                {"error": "Invalid password"},
+                status=status.HTTP_401_UNAUTHORIZED,
             )
+
         user = authenticate(request, email=email, password=password)
         if user is None:
             return Response(
@@ -93,19 +108,27 @@ class LoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        # if not user.otp_verified:
-        #     return "Remember to verify your account"
+        try:
+            otp_record = OneTimePassword.objects.get(user=user)
+            if not otp_record.verified:
+                verification_message = "Please verify your OTP."
+            else:
+                verification_message = None
+        except OneTimePassword.DoesNotExist:
+            verification_message = None
 
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
 
-        return Response(
-            {
-                "refresh": str(refresh),
-                "access": access_token,
-            },
-            status=status.HTTP_200_OK,
-        )
+        response_data = {
+            "refresh": str(refresh),
+            "access": access_token,
+        }
+
+        if verification_message:
+            response_data["message"] = verification_message
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class SearchMoviesView(APIView):

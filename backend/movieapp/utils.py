@@ -1,23 +1,27 @@
-import random
+from celery import shared_task
 from django.core.mail import send_mail
 from django.conf import settings
-from .models import User, OneTimePassword
+from .models import OneTimePassword, User
+import random
 import requests
 from rest_framework.pagination import PageNumberPagination
 
+if settings.DEBUG:
+    import logging
 
-def generate_otp():
-    return random.randint(100000, 999999)
+    logger = logging.getLogger(__name__)
 
 
-def send_otp_email(email):
-    otp = generate_otp()
-    subject = "OTP for MovieApp"
-
+@shared_task
+def send_otp_email_task(user_id):
     try:
-        user = User.objects.get(email=email)
+        user = User.objects.get(id=user_id)
     except User.DoesNotExist:
+        logger.error(f"User with ID {user_id} does not exist.")
         return False
+
+    otp = random.randint(100000, 999999)
+    subject = "OTP for MovieApp"
 
     email_from = settings.DEFAULT_FROM_EMAIL
     email_body = f"""
@@ -29,17 +33,29 @@ def send_otp_email(email):
     Team MovieApp
     """
 
+    # Store OTP in the database
     OneTimePassword.objects.create(user=user, otp=otp)
 
+    # Send email
     try:
-        print(f"Sending OTP email to {email}")
-        send_mail(subject, email_body, email_from, [email], fail_silently=False)
+        send_mail(subject, email_body, email_from, [user.email], fail_silently=False)
+        logger.info(f"OTP email sent to {user.email}")
     except Exception as e:
-
-        print(f"Error sending OTP email: {e}")
+        logger.error(f"Error sending OTP email to {user.email}: {e}")
         return False
 
     return True
+
+
+def send_otp_email(email):
+    try:
+        user = User.objects.get(email=email)  # Get the user by email
+        send_otp_email_task.delay(user.id)  # Pass user.id, not email
+        logger.info(f"OTP email task for {email} has been queued.")
+        return True
+    except User.DoesNotExist:
+        logger.error(f"User with email {email} does not exist.")
+        return False
 
 
 class MoviePagination(PageNumberPagination):
