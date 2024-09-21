@@ -32,49 +32,29 @@ function LoginModal({ isOpen, onClose }) {
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 
-		try {
-			let response;
-			if (isRegister) {
-				if (formData.password !== formData.password2) {
-					toast.error('Passwords do not match!');
-					return;
-				}
-
-				response = await register({
-					email: formData.email,
-					first_name: formData.first_name,
-					last_name: formData.last_name,
-					password: formData.password,
-					password2: formData.password2,
-				});
-			} else {
-				response = await login({
-					email: formData.email,
-					password: formData.password,
-				});
+		if (isRegister) {
+			if (formData.password !== formData.password2) {
+				toast.error('Passwords do not match!');
+				return;
 			}
 
-			if (response && response.access && response.refresh) {
-				localStorage.setItem('accessToken', response.access);
-				localStorage.setItem('refreshToken', response.refresh);
-				toast.success(
-					response.message ||
-						(isRegister ? 'Registration successful' : 'Login successful')
-				);
+			const response = register({
+				email: formData.email,
+				first_name: formData.first_name,
+				last_name: formData.last_name,
+				password: formData.password,
+				password2: formData.password2,
+			});
+			if (response === 'success') navigate('/home')
+			console.log("REGISTER RESPONSE::", response)
+		} else {
+			const response =  await login({
+				email: formData.email,
+				password: formData.password,
+			});
 
-				if (localStorage.getItem('accessToken')) {
-					navigate('/home');
-					onClose();
-				} else {
-					toast.error('Failed to store token. Please try again.');
-				}
-			} else {
-				toast.error(
-					response?.message || 'Authentication failed. Please try again.'
-				);
-			}
-		} catch (error) {
-			toast.error('An error occurred. Please try again.');
+			if (response === 'success') navigate('/home')
+			console.log("LOGIN RESPONSE::", response)
 		}
 	};
 
